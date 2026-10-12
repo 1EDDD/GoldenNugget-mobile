@@ -14,33 +14,49 @@ import Foundation
 enum PosterBoardTemplates {
     /// The document up to `<values>` — the layer tree, and the keyframe animation
     /// whose `duration`, `calculationMode` and `autoreverses` the caller sets.
-    static func camlHeader(width: Int, height: Int, calculationMode: String,
+    ///
+    /// The document (`docWidth`/`docHeight`) is the **logical screen**, while the
+    /// frames stay at their own `width`/`height`: PosterKit's depth effect is a
+    /// parallax between planes whose bounds and origin differ from the document,
+    /// so an oversized, off-centre `layerScale`/`centerX`/`centerY` is what gives
+    /// it something to travel against. `layerName` is the published object name,
+    /// and it appears in both the layer's `id`/`name` and `index.xml`.
+    static func camlHeader(width: Int, height: Int,
+                           docWidth: Int, docHeight: Int,
+                           centerX: Double, centerY: Double,
+                           layerScale: Double, layerName: String,
+                           calculationMode: String,
                            duration: Double, reverse: Int) -> String {
         [
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
             "",
             "<caml xmlns=\"http://www.apple.com/CoreAnimation/1.0\">",
-            "  <CALayer allowsEdgeAntialiasing=\"1\" allowsGroupOpacity=\"1\" bounds=\"0 0 \(width) \(height)\" contentsFormat=\"RGBA8\" cornerCurve=\"circular\" hidden=\"0\" name=\"_FLOATING\" position=\"\(width / 2) \(height / 2)\">",
+            "  <CALayer allowsEdgeAntialiasing=\"1\" allowsGroupOpacity=\"1\" bounds=\"0 0 \(docWidth) \(docHeight)\" contentsFormat=\"RGBA8\" geometryFlipped=\"1\" hidden=\"0\" name=\"Root Layer\" position=\"\(docWidth / 2) \(docHeight / 2)\">",
+            "    <backgroundColor opacity=\"0\" value=\"1 0 1\"/>",
             "    <sublayers>",
-            "      <CATransformLayer allowsEdgeAntialiasing=\"1\" allowsGroupOpacity=\"1\" allowsHitTesting=\"1\" bounds=\"0 0 \(width) \(height)\" contentsFormat=\"RGBA8\" cornerCurve=\"circular\" name=\"Chip\" position=\"\(width / 2) \(height / 2)\">",
+            "      <CALayer id=\"\(layerName)\" allowsEdgeAntialiasing=\"1\" allowsGroupOpacity=\"1\" anchorPoint=\"0 0\" bounds=\"0 0 \(docWidth) \(docHeight)\" contentsFormat=\"RGBA8\" geometryFlipped=\"0\" hidden=\"0\" name=\"\(layerName)\" position=\"0 0\">",
             "\t<sublayers>",
-            "\t  <CALayer allowsEdgeAntialiasing=\"1\" allowsGroupOpacity=\"1\" bounds=\"0 0 \(width) \(height)\" contentsFormat=\"RGBA8\" cornerCurve=\"circular\" name=\"CALayer1\" position=\"\(width / 2) \(height / 2)\">",
-            "\t    <contents type=\"CGImage\" src=\"assets/0.jpg\"/>",
-            "\t    <animations>",
-            "\t      <animation type=\"CAKeyframeAnimation\" calculationMode=\"\(calculationMode)\" keyPath=\"contents\" beginTime=\"1e-100\" duration=\"\(duration)\" removedOnCompletion=\"0\" repeatCount=\"inf\" repeatDuration=\"0\" speed=\"1\" timeOffset=\"0\" autoreverses=\"\(reverse)\">",
-            "\t\t<values>",
+            "\t  <CATransformLayer allowsEdgeAntialiasing=\"1\" allowsGroupOpacity=\"1\" allowsHitTesting=\"1\" bounds=\"0 0 \(width) \(height)\" contentsFormat=\"RGBA8\" cornerCurve=\"circular\" name=\"Chip\" position=\"\(centerX) \(centerY)\" transform=\"scale(\(layerScale), \(layerScale), 1)\">",
+            "\t    <sublayers>",
+            "\t      <CALayer allowsEdgeAntialiasing=\"1\" allowsGroupOpacity=\"1\" bounds=\"0 0 \(width) \(height)\" contentsFormat=\"RGBA8\" cornerCurve=\"circular\" name=\"CALayer1\" position=\"\(width / 2) \(height / 2)\">",
+            "\t\t<contents type=\"CGImage\" src=\"assets/0.jpg\"/>",
+            "\t\t<animations>",
+            "\t\t  <animation type=\"CAKeyframeAnimation\" calculationMode=\"\(calculationMode)\" keyPath=\"contents\" beginTime=\"1e-100\" duration=\"\(duration)\" removedOnCompletion=\"0\" repeatCount=\"inf\" repeatDuration=\"0\" speed=\"1\" timeOffset=\"0\" autoreverses=\"\(reverse)\">",
+            "\t\t    <values>",
         ].joined(separator: "\n") + "\n"
     }
 
     /// The closing tags: the three LKStates and their six transitions.
     static func camlFooter() -> String {
         [
-            "\t\t</values>",
-            "\t      </animation>",
-            "\t    </animations>",
-            "\t  </CALayer>",
+            "\t\t    </values>",
+            "\t\t  </animation>",
+            "\t\t</animations>",
+            "\t      </CALayer>",
+            "\t    </sublayers>",
+            "\t  </CATransformLayer>",
             "\t</sublayers>",
-            "      </CATransformLayer>",
+            "      </CALayer>",
             "    </sublayers>",
             "    <states>",
             "      <LKState name=\"Locked\">",
@@ -83,9 +99,13 @@ enum PosterBoardTemplates {
         "\t\t\t<CGImage src=\"assets/\(index).jpg\"/>\n"
     }
 
-    /// The `.ca` bundle's `index.xml`, whose `documentWidth`/`documentHeight` are
-    /// the frame size — the same numbers as the caml's `bounds`.
-    static func camlIndex(width: Int, height: Int) -> String {
+    /// The `.ca` bundle's `index.xml`. `documentWidth`/`documentHeight` are the
+    /// **document** (`docWidth`/`docHeight`), not the frame size — the document
+    /// has to match the background/foreground packages or PosterKit 27 collapses
+    /// the floating view into the foreground one. `layerName` is published as
+    /// `publishedObjectNames`, and `unitsInPixelsInPlayer` is false: the
+    /// document is points.
+    static func camlIndex(docWidth: Int, docHeight: Int, layerName: String) -> String {
         [
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
             "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">",
@@ -94,11 +114,11 @@ enum PosterBoardTemplates {
             "\t<key>assetManifest</key>",
             "\t<string>assetManifest.caml</string>",
             "\t<key>documentHeight</key>",
-            "\t<real>\(height)</real>",
+            "\t<real>\(docHeight)</real>",
             "\t<key>documentResizesToView</key>",
-            "\t<true/>",
+            "\t<false/>",
             "\t<key>documentWidth</key>",
-            "\t<real>\(width)</real>",
+            "\t<real>\(docWidth)</real>",
             "\t<key>dynamicGuidesEnabled</key>",
             "\t<true/>",
             "\t<key>geometryFlipped</key>",
@@ -112,11 +132,11 @@ enum PosterBoardTemplates {
             "\t<key>interactiveTouchEventsEnabled</key>",
             "\t<false/>",
             "\t<key>loopEnd</key>",
-            "\t<real>0.0</real>",
+            "\t<real>+infinity</real>",
             "\t<key>loopStart</key>",
             "\t<real>0.0</real>",
             "\t<key>loopingEnabled</key>",
-            "\t<false/>",
+            "\t<true/>",
             "\t<key>multitouchDisablesMouse</key>",
             "\t<false/>",
             "\t<key>multitouchEnabled</key>",
@@ -127,6 +147,10 @@ enum PosterBoardTemplates {
             "\t<true/>",
             "\t<key>presentationTouchEventsEnabled</key>",
             "\t<false/>",
+            "\t<key>publishedObjectNames</key>",
+            "\t<array>",
+            "\t\t<string>\(layerName)</string>",
+            "\t</array>",
             "\t<key>rootDocument</key>",
             "\t<string>main.caml</string>",
             "\t<key>savesWindowFrame</key>",
@@ -142,7 +166,7 @@ enum PosterBoardTemplates {
             "\t<key>touchesColor</key>",
             "\t<string>1 1 0 0.8</string>",
             "\t<key>unitsInPixelsInPlayer</key>",
-            "\t<true/>",
+            "\t<false/>",
             "</dict>",
             "</plist>",
         ].joined(separator: "\n") + "\n"

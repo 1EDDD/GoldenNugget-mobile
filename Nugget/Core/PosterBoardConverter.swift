@@ -502,26 +502,30 @@ enum PosterBoardConverter {
         return (channels[0], channels[1], channels[2])
     }
 
-    /// The first opaque solid colour in a plane's CAML.
+    /// The **topmost** opaque solid colour in a plane's CAML.
     ///
-    /// A sublayer's `backgroundColor` attribute wins over the root's
-    /// `<backgroundColor>` element, because the source often leaves the element at
-    /// opacity 0 and the attribute is the visible fill.
+    /// A sublayer's `backgroundColor` attribute (the visible fill) wins over the
+    /// root's `<backgroundColor>` element, because the source often leaves the
+    /// element at opacity 0 and the attribute is the visible fill. Both sweeps
+    /// keep the **last** match rather than returning the first: later in
+    /// document order is visually on top, and the first match is routinely the
+    /// root element's placeholder rather than the plane anyone sees.
     static func solidBackgroundColor(of text: String) -> (r: Int, g: Int, b: Int)? {
         let full = NSRange(text.startIndex..., in: text)
+        var last: (r: Int, g: Int, b: Int)?
         for match in backgroundColorAttrRE.matches(in: text, range: full) {
             guard let range = Range(match.range(at: 1), in: text) else { continue }
             if let rgb = rgb(fromComponents: String(text[range])) {
-                return (rgb.0, rgb.1, rgb.2)
+                last = (rgb.0, rgb.1, rgb.2)
             }
         }
         for match in backgroundColorElementRE.matches(in: text, range: full) {
             guard let range = Range(match.range(at: 1), in: text) else { continue }
             if let rgb = rgb(fromComponents: String(text[range])) {
-                return (rgb.0, rgb.1, rgb.2)
+                last = (rgb.0, rgb.1, rgb.2)
             }
         }
-        return nil
+        return last
     }
 
     /// Give the last empty sublayer a real CGImage, leaving the CAML intact.
@@ -768,6 +772,17 @@ enum PosterBoardConverter {
     }
 
     /// Whether the plane's document is in pixels rather than points.
+    ///
+    /// `unitsInPixelsInPlayer` is authoritative when present; otherwise a plane
+    /// whose `documentWidth` is clearly larger than the logical width is a pixel
+    /// canvas (e.g. an iOS 17 "flow" 3174x3174 canvas). **Anything else defaults
+    /// to points**: legacy third-party tendies author their CAML in the logical
+    /// screen space and often ship an index with neither key, and reading those
+    /// as pixels makes `fitScale` divide the point-space `bounds` by the pixel
+    /// scale — a 390x844 canvas "becomes" 130x281 points and the artwork ships at
+    /// 3x. The rebuild path classifies the same way (a missing flag is a
+    /// non-pixel logical poster), and this default used to be the other way
+    /// round, which is what zoomed converted wallpapers.
     static func planeUnits(_ index: [String: Any], logicalWidth: Int) -> Bool {
         if let value = index["unitsInPixelsInPlayer"],
            CFGetTypeID(value as CFTypeRef) == CFBooleanGetTypeID(),
@@ -777,7 +792,7 @@ enum PosterBoardConverter {
         if let docWidth = number(index["documentWidth"]), logicalWidth != 0 {
             return docWidth > Double(logicalWidth) + 1.0
         }
-        return true
+        return false
     }
 
     /// Modernise one plane, in place. Returns the files it wrote.

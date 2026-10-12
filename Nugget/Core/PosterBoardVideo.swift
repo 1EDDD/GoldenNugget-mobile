@@ -135,7 +135,7 @@ enum PosterBoardVideo {
         // `naturalSize`, **not** the size after `preferredTransform`: the frames
         // below come out of a reader in their stored orientation, and OpenCV's
         // decoder — the reference's — does not apply the transform either. The
-        // caml's bounds has to match the JPEGs it points at.
+        // caml's frame bounds has to match the JPEGs it points at.
         let naturalSize = try await track.load(.naturalSize)
         let transform = try await track.load(.preferredTransform)
         let width = Int(abs(naturalSize.width.rounded()))
@@ -160,6 +160,27 @@ enum PosterBoardVideo {
         }
         let duration = Double(estimate) / fps
 
+        // The document is the logical screen, **not** the frame size. The
+        // reference's `create_caml` grew these four parameters for exactly this
+        // reason (743d363): PosterKit's depth effect parallaxes planes whose
+        // bounds and origin differ from the document, and a document sized to the
+        // video — with the layer dead-centre at scale 1.0 — gives it nothing to
+        // travel against, which reads as a flat wallpaper on iOS 27.
+        //
+        // `cover` scales the frames to fill the document; the reference's own
+        // default `bounds_scale` is 1.0 and its offsets are 0, so the defaults
+        // reproduce it exactly, and a caller wanting travel passes more.
+        let screen = Self.screenSize(log: log)
+        let docWidth = screen.width
+        let docHeight = screen.height
+        let cover = max(Double(docWidth) / Double(width), Double(docHeight) / Double(height))
+        let layerScale = cover * Self.depthScale
+        let centerX = Double(docWidth) / 2
+        let centerY = Double(docHeight) / 2
+        // The layer is published by name, and `index.xml` has to name the same
+        // one — the reference passes the same `layer_name` to both writers.
+        let layerName = "Chip"
+
         // Only the frames are cleared. The `.ca` directory itself comes from the
         // bundled descriptor and carries `index.xml`/`main.caml` — which are
         // rewritten below anyway, but nothing else in it is ours to delete.
@@ -168,6 +189,9 @@ enum PosterBoardVideo {
         try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
 
         var caml = PosterBoardTemplates.camlHeader(width: width, height: height,
+                                                   docWidth: docWidth, docHeight: docHeight,
+                                                   centerX: centerX, centerY: centerY,
+                                                   layerScale: layerScale, layerName: layerName,
                                                    calculationMode: calculationMode,
                                                    duration: duration,
                                                    reverse: reverse ? 1 : 0)
@@ -186,12 +210,77 @@ enum PosterBoardVideo {
         caml += PosterBoardTemplates.camlFooter()
         try caml.write(to: caDirectory.appendingPathComponent("main.caml"),
                        atomically: true, encoding: .utf8)
-        try PosterBoardTemplates.camlIndex(width: width, height: height)
+        try PosterBoardTemplates.camlIndex(docWidth: docWidth, docHeight: docHeight,
+                                           layerName: layerName)
             .write(to: caDirectory.appendingPathComponent("index.xml"),
                    atomically: true, encoding: .utf8)
-        log("  → \(written) frame(s), \(width)×\(height), \(String(format: "%.2f", fps)) fps, "
+        log("  → \(written) frame(s), \(width)×\(height) frames in a \(docWidth)×\(docHeight) "
+            + "document, layer \(layerName) at scale \(String(format: "%.4f", layerScale)), "
+            + "\(String(format: "%.2f", fps)) fps, "
             + "duration \(String(format: "%.3f", duration)) s")
     }
+
+    /// The document size, in points: the device's own screen, which is the one
+    /// number the background and foreground packages were built for.
+    ///
+    /// Read from a `UIScreen` reached through a window scene rather than
+    /// `UIScreen.main` — deprecated in iOS 26, and this app targets 26. Falls
+    /// back to the reference's own 390x844 default (a 6.1" iPhone) rather than
+    /// guessing: the reference is a desktop app that has to assume a screen, and
+    /// a build that cannot reach a scene has no better answer than the one it
+    /// uses. The fallback is logged, because it silently changes the document
+    /// every frame is laid out in.
+    private static func screenSize(log: @escaping @Sendable (String) -> Void)
+        -> (width: Int, height: Int) {
+        guard let bounds = activeScreenBounds(), !bounds.isEmpty else {
+            log("  ⚠️ no window scene is reachable; falling back to the reference's "
+                + "390x844 document. The frames will be laid out for a screen this "
+                + "device does not have.")
+            return (390, 844)
+        }
+        let width = max(1, Int(bounds.width.rounded()))
+        let height = max(1, Int(bounds.height.rounded()))
+        log("  → document \(width)×\(height) points "
+            + "(the device screen; the reference assumes a 390x844 iPhone)")
+        return (width, height)
+    }
+
+    /// The bounds of a screen this app is actually on, or nil when no scene can
+    /// be reached (a unit-test host, a background extension).
+    private static func activeScreenBounds() -> CGRect? {
+        let scenes = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+        // `.foregroundActive` first: a scene that is on screen but not active
+        // (say, a Slide Over companion) is not the one whose size a wallpaper
+        // document should match.
+        let ordered = scenes.sorted { lhs, rhs in
+            let rank: (UIScene.ActivationState) -> Int = {
+                switch $0 {
+                case .foregroundActive: return 0
+                case .foregroundInactive: return 1
+                default: return 2
+                }
+            }
+            return rank(lhs.activationState) < rank(rhs.activationState)
+        }
+        if let screen = ordered.first(where: { !$0.screen.bounds.isEmpty })?.screen {
+            return screen.bounds
+        }
+        return scenes.first?.screen.bounds
+    }
+
+    /// `create_caml`'s `bounds_scale`, kept at the reference's default.
+    ///
+    /// 1.0 is `cover`: the frames exactly fill the document, centred. A value
+    /// above 1 makes the animated layer larger than the document, which is what
+    /// gives the depth pass travel to parallax against — the reference exposes it
+    /// for that, and the Odyssey's `spartanbg` ships bounds 1852x4104 inside a
+    /// 390x844 document. Nothing in this port drives it yet: the page has no
+    /// control for it, and inventing a default that is not the reference's would
+    /// change how every video wallpaper looks on a device that has never run
+    /// one. It is a named constant so the value is one edit away, not a literal
+    /// buried in the geometry.
+    static let depthScale: Double = 1.0
 
     // MARK: - Live photo
 

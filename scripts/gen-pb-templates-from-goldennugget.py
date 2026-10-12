@@ -42,14 +42,35 @@ RELATIVE_SOURCE = "src/controllers/video_handler.py"
 # Python placeholder → Swift expression.  The two `int(...)` forms are the
 # reference rounding a position to a whole point; `width`/`height` are already
 # integers here, so the cast is the integer division itself.
+#
+# The `doc_*` / `center_*` / `layer_*` set is upstream's depth-plane geometry
+# (743d363): the *document* is the logical screen while the animated *frames*
+# stay oversized and off-centre, because PosterKit's depth effect parallaxes
+# planes whose bounds and origin differ from the document. Before that commit
+# the document and the frames were the same numbers, which is why a video
+# wallpaper had nothing to parallax against and read as flat.
 SUBSTITUTIONS = {
     "{width}": r"\(width)",
     "{height}": r"\(height)",
+    # Both spellings of the rounding division are upstream's: the pre-743d363
+    # literals wrote `{int(width/2)}` and the depth-geometry ones
+    # `{int(width / 2)}`. Same expression, and the generator has to accept
+    # whichever the current literal happens to carry.
     "{int(width/2)}": r"\(width / 2)",
     "{int(height/2)}": r"\(height / 2)",
+    "{int(width / 2)}": r"\(width / 2)",
+    "{int(height / 2)}": r"\(height / 2)",
     "{calculationMode}": r"\(calculationMode)",
     "{duration}": r"\(duration)",
     "{reverse}": r"\(reverse)",
+    "{doc_width}": r"\(docWidth)",
+    "{doc_height}": r"\(docHeight)",
+    "{int(doc_width / 2)}": r"\(docWidth / 2)",
+    "{int(doc_height / 2)}": r"\(docHeight / 2)",
+    "{center_x}": r"\(centerX)",
+    "{center_y}": r"\(centerY)",
+    "{layer_scale}": r"\(layerScale)",
+    "{layer_name}": r"\(layerName)",
 }
 
 
@@ -177,7 +198,18 @@ import Foundation
 enum PosterBoardTemplates {{
     /// The document up to `<values>` — the layer tree, and the keyframe animation
     /// whose `duration`, `calculationMode` and `autoreverses` the caller sets.
-    static func camlHeader(width: Int, height: Int, calculationMode: String,
+    ///
+    /// The document (`docWidth`/`docHeight`) is the **logical screen**, while the
+    /// frames stay at their own `width`/`height`: PosterKit's depth effect is a
+    /// parallax between planes whose bounds and origin differ from the document,
+    /// so an oversized, off-centre `layerScale`/`centerX`/`centerY` is what gives
+    /// it something to travel against. `layerName` is the published object name,
+    /// and it appears in both the layer's `id`/`name` and `index.xml`.
+    static func camlHeader(width: Int, height: Int,
+                           docWidth: Int, docHeight: Int,
+                           centerX: Double, centerY: Double,
+                           layerScale: Double, layerName: String,
+                           calculationMode: String,
                            duration: Double, reverse: Int) -> String {{
         [
 {header_lines}
@@ -196,9 +228,13 @@ enum PosterBoardTemplates {{
         "\\t\\t\\t<CGImage src=\\"assets/\\(index).jpg\\"/>\\n"
     }}
 
-    /// The `.ca` bundle's `index.xml`, whose `documentWidth`/`documentHeight` are
-    /// the frame size — the same numbers as the caml's `bounds`.
-    static func camlIndex(width: Int, height: Int) -> String {{
+    /// The `.ca` bundle's `index.xml`. `documentWidth`/`documentHeight` are the
+    /// **document** (`docWidth`/`docHeight`), not the frame size — the document
+    /// has to match the background/foreground packages or PosterKit 27 collapses
+    /// the floating view into the foreground one. `layerName` is published as
+    /// `publishedObjectNames`, and `unitsInPixelsInPlayer` is false: the
+    /// document is points.
+    static func camlIndex(docWidth: Int, docHeight: Int, layerName: String) -> String {{
         [
 {index_lines}
         ].joined(separator: "\\n") + "\\n"

@@ -375,7 +375,18 @@ extension ProtectiveBackup {
 
     /// Inside the protective HomeDomain scope but written by the tweak pass
     /// itself — restoring the stale copy would undo the applied tweak.
-    private static let skipPathPrefixes = ["Library/SpringBoard/statusBarOverrides"]
+    ///
+    /// Both spellings, and the capital one is a separate entry on purpose. The
+    /// classic record is `statusBarOverrides` (lower-case s) and the iOS 27
+    /// record is `StatusBarOverrides.archive` (capital S) — and `startsWith`
+    /// below is a plain prefix test, deliberately, so the lower-case prefix does
+    /// **not** match the archive. Without this entry Phase 1 captures the
+    /// override the run just applied and Phase 3 hands the stale value straight
+    /// back, i.e. a status bar reset looks like it did nothing on iOS 27.
+    private static let skipPathPrefixes = [
+        "Library/SpringBoard/statusBarOverrides",          // iOS ≤26 classic struct
+        "Library/SpringBoard/StatusBarOverrides.archive",  // iOS 27+ NSKeyedArchiver record
+    ]
 
     /// Files iOS manages internally and rejects when a sparse backup carries
     /// them with the wrong metadata.  `.GlobalPreferences.plist` is written
