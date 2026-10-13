@@ -23,7 +23,10 @@
 //
 // Run:
 //   mkdir -p /tmp/sbcheck && cat Nugget/Core/TweakModel.swift \
+//       Nugget/Core/TweakCatalog.swift Nugget/Core/TweakCatalogDaemons.swift \
+//       Nugget/Core/TweakDomainMap.swift Nugget/Core/TweakCompiler.swift \
 //       Nugget/Core/StatusBarModel.swift Nugget/Core/StatusBarArchive.swift \
+//       Nugget/Core/StatusBarSelection.swift Nugget/Views/Extensions/Extensions.swift \
 //       scripts/statusbar-check.swift > /tmp/sbcheck/main.swift \
 //     && xcrun swiftc -O /tmp/sbcheck/main.swift -o /tmp/sbcheck/check \
 //     && /tmp/sbcheck/check

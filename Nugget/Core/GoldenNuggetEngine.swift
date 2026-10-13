@@ -172,15 +172,35 @@ class GoldenNuggetEngine {
     /// the handler hops to the main actor itself.
     var onProgress: ((Double) -> Void)?
 
+    /// Route the remaining-time estimate into the UI with the same story as
+    /// `onProgress`: the feed happens on the Rust callback thread, the handler
+    /// hops to the main actor.  Empty string until a stable rate is known — the
+    /// desktop's status line shows nothing while `eta.py` is still quiet.
+    var onEta: ((String) -> Void)?
+
+    /// The last formatted remaining time (`""` before an estimate exists or
+    /// while nothing is running).
+    private(set) var etaText: String = ""
+
+    /// The `eta.py` port.  Recreated per run so a new apply starts estimating
+    /// from a clean slate even though the engine object is a singleton.
+    private var etaEstimator = ProgressEta()
+
     private func reportProgress(_ percent: Double) {
         let clamped = percent < 0 ? 0 : min(percent, 100)
         progress = clamped
         onProgress?(clamped)
+        let estimate = etaEstimator.update(clamped)
+        etaText = estimate
+        onEta?(estimate)
     }
 
     private func clearProgress() {
         progress = nil
+        etaEstimator.reset()
+        etaText = ""
         onProgress?(Double.nan)
+        onEta?("")
     }
 
     // MARK: - Run: apply the ported GoldenNugget tweaks
@@ -206,6 +226,10 @@ class GoldenNuggetEngine {
         deviceVersion: String,
         isIPhone: Bool
     ) async throws {
+        // `_prepare_rollback_preset` (`main_window_mixins.py:1090`): keep the
+        // last successful apply available as a one-click rollback *before* the
+        // next apply overwrites it.  Best-effort, like the reference.
+        GoldenNuggetPresets.prepareRollback()
         try await loggedRun("apply") {
             try await applyTweaksRun(selection: selection,
                                      posterBoard: posterBoard,
@@ -213,6 +237,13 @@ class GoldenNuggetEngine {
                                      deviceVersion: deviceVersion,
                                      isIPhone: isIPhone)
         }
+        // `_save_last_applied_preset` (`main_window_mixins.py:1101`): a run
+        // that returned is a successful apply — it becomes the rollback source
+        // for the next one.  The model string is derived because the engine
+        // does not carry a full identity; the snapshot is internal metadata.
+        _ = GoldenNuggetPresets.saveLastApplied(selection: selection,
+                                                deviceModel: isIPhone ? "iPhone" : "iPad",
+                                                iosVersion: deviceVersion)
     }
 
     private func applyTweaksRun(

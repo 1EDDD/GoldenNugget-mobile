@@ -255,18 +255,23 @@ extension ProtectiveBackup {
         }
 
         // HomeDomain selective paths
-        for prefix in (
-            ["Library/Accounts",
-             "Library/ConfigurationProfiles",
-             "Library/Preferences"] +
-            ["Library/SpringBoard"] +
-            ["Library/ControlCenter"] +
-            ["Library/Shortcuts"] +
-            ["Library/WebClips",
-             "Library/WebApp",
-             "Library/WebKit/WebsiteData"] +
-            ["Library/AddressBook"]
-        ) {
+        //
+        // Split out of the `for … in` header: the concatenated array literal
+        // there defeats the Swift 6 type-checker under -O, so collect the
+        // prefixes once and iterate the flat array.
+        let homePrefixes = [
+            "Library/Accounts",
+            "Library/ConfigurationProfiles",
+            "Library/Preferences",
+            "Library/SpringBoard",
+            "Library/ControlCenter",
+            "Library/Shortcuts",
+            "Library/WebClips",
+            "Library/WebApp",
+            "Library/WebKit/WebsiteData",
+            "Library/AddressBook",
+        ]
+        for prefix in homePrefixes {
             if pathMatch(name, prefix) { return true }
         }
 
@@ -434,6 +439,38 @@ extension ProtectiveBackup {
             return true
         }
         return false
+    }
+
+    /// A stable fingerprint of the keep-set, so a retained baseline can tell
+    /// whether the rules that produced it still name the same files.
+    ///
+    /// `BackupBaseline` invalidates the baseline when this changes: a file the
+    /// rules did not name was drained and never stored, so a seeded manifest would
+    /// otherwise tell the device "unchanged, do not send" for exactly the files a
+    /// new rule wants, and they would never come back. Only the rule *inputs* are
+    /// hashed, in a fixed order, so the value is deterministic across runs; sets
+    /// are sorted first for the same reason.
+    static var keepSetHash: String {
+        var parts: [String] = protectiveDomains.sorted().map { "domain:\($0)" }
+        let groups: [(String, [String])] = [
+            ("appleID", appleIDPrefixes),
+            ("springBoard", springBoardPrefixes),
+            ("controlCenter", controlCenterPrefixes),
+            ("shortcuts", shortcutsPrefixes),
+            ("webClips", webClipsPrefixes),
+            ("webApp", webAppPrefixes),
+            ("webkitWebsiteData", webkitWebsiteDataPrefixes),
+            ("addressBook", addressBookPrefixes),
+        ]
+        for (label, group) in groups {
+            parts.append(contentsOf: group.map { "\(label):\($0)" })
+        }
+        parts.append(contentsOf: skipPathPrefixes.map { "skip:\($0)" })
+        parts.append(contentsOf: skipFiles.sorted().map { "skipFile:\($0)" })
+        // The domain-root rows `keepsRow` admits are part of the set too.
+        parts.append("root:SystemPreferencesDomain")
+        parts.append("root:MessagesDomain")
+        return ManifestStore.sha1Hex(parts.joined(separator: "\n"))
     }
 
     /// Python's `str.startswith(prefix)` — a plain prefix test, deliberately

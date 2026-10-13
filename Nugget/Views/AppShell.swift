@@ -20,6 +20,7 @@ import UIKit
 enum AppDestination: String, CaseIterable, Identifiable, Hashable {
     case home
     case tweaks
+    case presets
     case posterBoard
     case wallpaperDownloads
     case statusBar
@@ -52,6 +53,7 @@ enum AppDestination: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .home: "GoldenNugget"
         case .tweaks: "Tweaks"
+        case .presets: "Presets"
         case .posterBoard: "PosterBoard"
         case .wallpaperDownloads: "Download Wallpapers"
         case .statusBar: "Status Bar"
@@ -68,6 +70,7 @@ enum AppDestination: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .home: "house"
         case .tweaks: "slider.horizontal.3"
+        case .presets: "tray.2"
         case .posterBoard: "photo.artframe"
         case .wallpaperDownloads: "square.and.arrow.down"
         case .statusBar: "antenna.radiowaves.left.and.right"
@@ -278,6 +281,8 @@ struct RootView: View {
                     EmptyView()
                 case .tweaks:
                     TweaksView(selection: $tweakSelection)
+                case .presets:
+                    PresetManagerView(selection: $tweakSelection)
                 case .posterBoard:
                     PosterBoardView(selection: $posterBoardSelection)
                 case .wallpaperDownloads:

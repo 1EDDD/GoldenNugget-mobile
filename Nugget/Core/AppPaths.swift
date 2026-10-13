@@ -35,6 +35,21 @@ enum AppPaths {
         URL.documents.appendingPathComponent(udid, conformingTo: .data)
     }
 
+    /// `<Documents>/Baseline/<udid>/` — the retained pull the next run diffs
+    /// against.
+    ///
+    /// `Manifest.db` here is the pristine, device-produced manifest kept aside
+    /// **before** the prune mutates the working copy in place, and `baseline.json`
+    /// is the record that authorises seeding it (`BackupBaseline`). Its own root
+    /// rather than the working tree's, because the two copies have different jobs:
+    /// the pruned one is what a restore needs, the pristine one is what the device
+    /// needs, and keeping them apart is what makes reuse possible without
+    /// weakening the prune.
+    static func baselineDir(udid: String) -> URL {
+        URL.documents.appendingPathComponent("Baseline", conformingTo: .data)
+            .appendingPathComponent(udid, conformingTo: .data)
+    }
+
     /// `<Documents>/PosterBoardFetch/` — the scratch root of a PosterBoard
     /// database fetch.
     ///

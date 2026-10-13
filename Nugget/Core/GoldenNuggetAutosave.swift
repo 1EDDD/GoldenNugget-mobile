@@ -152,53 +152,20 @@ enum GoldenNuggetAutosave {
     /// omitted tweak would keep whatever the registry left behind.  `PosterBoard`
     /// is excluded, for the reason the reference gives ("wallpapers are
     /// device-specific and heavy, so they must not travel with a preset").
+    ///
+    /// The body is the shared preset-v2 serializer, `GoldenNuggetPresets.document`
+    /// — the autosave calls it with its fixed description/tags and the original
+    /// creation time (the reference's `_save_autosave_preset` arguments and its
+    /// "keep `created_at`" rule), exactly as `save_preset` would.
     static func document(for selection: TweakSelection,
                          deviceModel: String,
                          iosVersion: String) -> [String: Any] {
-        var tweaks: [String: Any] = [:]
-        // allWithDaemons, not all: the daemons live in a separate catalog
-        // collection, so iterating `all` wrote a preset that silently omitted
-        // every daemon group. The restore path goes through the shared import
-        // (which does know about daemons), so the omission was invisible from
-        // the read side and only showed up as daemons that never came back.
-        for spec in TweakCatalog.allWithDaemons where spec.id != "PosterBoard" {
-            var entry: [String: Any] = [
-                // `type(tweak).__name__`.  A spec that writes a whole dict is
-                // the reference's `AdvancedPlistTweak`, everything else is a
-                // `BasicPlistTweak` (`tweak_classes.py:59`, `:115`).
-                "type": spec.writesWholeDict ? "AdvancedPlistTweak" : "BasicPlistTweak",
-                "enabled": selection.isOn(spec),
-            ]
-            if spec.writesWholeDict {
-                // `AdvancedPlistTweak`: the dict of keys `apply_tweak` would
-                // write, which is what `_filter_keys` keeps.
-                var dict: [String: Any] = [:]
-                for (key, value) in selection.multiValues(for: spec) ?? [:] {
-                    dict[key] = value.plistObject
-                }
-                entry["value"] = dict
-            } else {
-                entry["value"] = selection.value(for: spec).plistObject
-            }
-            tweaks[spec.id] = entry
-        }
-
-        let now = Int(Date().timeIntervalSince1970)
-        var metadata: [String: Any] = [
-            "version": presetVersion,
-            "description": description,
-            "device_model": deviceModel.isEmpty ? "Unknown" : deviceModel,
-            "ios_version": iosVersion.isEmpty ? "Unknown" : iosVersion,
-            "created_at": now,
-            "updated_at": now,
-            "tags": tags,
-        ]
-        // `save_preset` keeps the original creation time when it overwrites an
-        // existing preset; `updated_at` is what moves.
-        if let created = existingCreatedAt() { metadata["created_at"] = created }
-
-        // `data["metadata"] = meta` in the reference, so metadata comes second.
-        return ["tweaks": tweaks, "metadata": metadata]
+        GoldenNuggetPresets.document(for: selection,
+                                     deviceModel: deviceModel,
+                                     iosVersion: iosVersion,
+                                     description: description,
+                                     tags: tags,
+                                     createdAt: existingCreatedAt())
     }
 
     /// The `created_at` already on disk, if any.

@@ -39,6 +39,43 @@ struct ManifestStore {
         FileManager.default.fileExists(atPath: dbPath)
     }
 
+    /// The number of rows in the `Files` table.
+    ///
+    /// Returns 0 — rather than throwing — when the database is absent or is the
+    /// host-written placeholder (which has no `Files` table). Both are the answer
+    /// `BackupBaseline` needs: it is checking whether there is anything worth
+    /// retaining or seeding, and "nothing" is a legitimate 0.
+    func rowCount() -> Int {
+        guard let db = try? open() else { return 0 }
+        defer { sqlite3_close(db) }
+        var stmt: OpaquePointer?
+        defer { sqlite3_finalize(stmt) }
+        guard sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM Files", -1, &stmt, nil) == SQLITE_OK else {
+            return 0
+        }
+        return sqlite3_step(stmt) == SQLITE_ROW ? Int(sqlite3_column_int64(stmt, 0)) : 0
+    }
+
+    /// Delete every `Files` row of one domain and return how many were removed.
+    ///
+    /// Used when seeding a retained manifest for a *merged* pull: a container
+    /// fetched that way has its rows pruned and its payloads swept as orphans at
+    /// the end of every run, while the retained manifest still lists them. Telling
+    /// the device those files are unknown (by dropping the rows) makes it upload
+    /// them again instead of answering "unchanged, do not send".
+    func dropRows(domain: String) -> Int {
+        guard let db = try? open() else { return 0 }
+        defer { sqlite3_close(db) }
+        var stmt: OpaquePointer?
+        defer { sqlite3_finalize(stmt) }
+        guard sqlite3_prepare_v2(db, "DELETE FROM Files WHERE domain = ?", -1, &stmt, nil) == SQLITE_OK else {
+            return 0
+        }
+        sqlite3_bind_text(stmt, 1, domain, -1, ManifestSchema.transient)
+        guard sqlite3_step(stmt) == SQLITE_DONE else { return 0 }
+        return Int(sqlite3_changes(db))
+    }
+
     /// The fileID of a manifest row: `sha1("<domain>-<relativePath>")` in hex.
     ///
     /// This is the join between the database and the payload tree — the payload

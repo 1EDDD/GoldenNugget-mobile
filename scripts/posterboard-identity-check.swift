@@ -43,6 +43,11 @@
 // This file is NOT part of the app target; keep it out of Package.swift.
 
 import Foundation
+// PosterBoard.swift spells `appendingPathComponent(_:conformingTo: .data)`, which
+// resolves the overload only with UTType in scope. In the app target the import
+// arrives from a sibling file; the harness compiles PosterBoard.swift alone, so it
+// has to name it here.
+import UniformTypeIdentifiers
 
 // MARK: - Stubs for the app types PosterBoard.swift names
 

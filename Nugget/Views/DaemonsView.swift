@@ -31,11 +31,16 @@ struct DaemonsView: View {
     /// default.
     @State private var collapsedSections: Set<DaemonSection> = []
     @State private var foldedByHand: Set<DaemonSection> = []
+    /// The search field's text, filtered through `visibleGroups`.
+    @State private var searchText = ""
 
     var body: some View {
         List {
             headerSection
             coverageSection
+            if searchActive && !DaemonGroups.all.contains(where: { $0.showsSwitch && matchesSearch($0) }) {
+                emptySearchSection
+            }
             ForEach(DaemonSection.allCases) { section in
                 let groups = visibleGroups(in: section)
                 if !groups.isEmpty {
@@ -59,6 +64,12 @@ struct DaemonsView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Daemons")
+        // The reference gives the daemons list the same search widget as the
+        // tweaks list (`gui/ios/daemons.py`, `ListSearch`): every word of the
+        // query must appear in the group's title, its name or one of its labels.
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .always),
+                    prompt: "Search daemons")
         // Compact widths only -- on a tablet the split view draws its own sidebar
         // toggle, and a second button beside it is the duplicate-controls mess.
         .goldenSidebarButton()
@@ -177,7 +188,28 @@ struct DaemonsView: View {
     // MARK: - Selection
 
     private func visibleGroups(in section: DaemonSection) -> [DaemonGroup] {
-        DaemonGroups.all.filter { $0.section == section && $0.showsSwitch }
+        DaemonGroups.all.filter { $0.section == section && $0.showsSwitch && matchesSearch($0) }
+    }
+
+    /// Whether the search field holds a non-empty query.
+    private var searchActive: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// The reference stores a card's `searchText` as the title, the daemon name
+    /// and its labels joined (`gui/ios/daemons.py`), and matches the query's
+    /// words against all of them.
+    private func matchesSearch(_ group: DaemonGroup) -> Bool {
+        searchMatches(query: searchText, group.title, group.name, group.labels.joined(separator: " "))
+    }
+
+    /// The reference's `IOSSearchEmpty`: shown only while a query is live and
+    /// no switchable group survived it.
+    private var emptySearchSection: some View {
+        Section {
+            Text("No matches found.")
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func spec(_ group: DaemonGroup) -> TweakSpec? {

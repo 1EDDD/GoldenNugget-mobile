@@ -38,6 +38,16 @@ struct SettingsView: View {
     /// changes nothing the user can see.
     @State private var showSetupGuide = false
 
+    /// The operation history (the port of `apply_history.py` and the desktop
+    /// Settings page's *Operation History* card).  Held as loaded records and
+    /// re-read whenever the page's filters change or an operation is cleared —
+    /// the desktop re-reads the file on every refresh, and nothing else here
+    /// watches the file.
+    @State private var history: [ApplyHistory.Record] = []
+    @State private var historySearch = ""
+    @State private var historyMode = "all"
+    @State private var historyResult = "all"
+
     /// Sizes and existence of the two files a report is built from.
     private struct LogSizes: Equatable {
         var appBytes: UInt64 = 0
@@ -57,6 +67,7 @@ struct SettingsView: View {
             setupSection
             logsSection
             applySection
+            historySection
             developmentSection
         }
         .navigationTitle("Settings")
@@ -71,6 +82,7 @@ struct SettingsView: View {
         }
         .task {
             refreshLogs()
+            refreshHistory()
         }
         .onChange(of: devModeOn) { _, _ in DevSettings.applyLoggingPreference() }
         .onChange(of: verboseLog) { _, _ in DevSettings.applyLoggingPreference() }
@@ -226,6 +238,122 @@ struct SettingsView: View {
                 + "a lockdown service this port has no path for), and no keybag certificate "
                 + "is generated.",
         ].joined(separator: "\n")
+    }
+
+    // MARK: - Operation History
+
+    /// The desktop Settings page's *Operation History* card
+    /// (`gui/ios/settings.py:741`): the last operations, searchable and
+    /// filterable, read from the same `operations.json` the reference writes
+    /// (`apply_history.py`).
+    ///
+    /// The desktop also reaches the preset actions from this page; here they
+    /// live on their own **Presets** page, so only the history is duplicated
+    /// from the reference's Settings.
+    private var historySection: some View {
+        Section("Operation History") {
+            TextField("Search history…", text: $historySearch)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+
+            Picker("Operation", selection: $historyMode) {
+                Text("All operations").tag("all")
+                Text("Apply").tag("apply")
+                Text("Reset").tag("reset")
+            }
+            .pickerStyle(.segmented)
+
+            Picker("Result", selection: $historyResult) {
+                Text("All results").tag("all")
+                Text("Success").tag("success")
+                Text("Failed").tag("failed")
+            }
+            .pickerStyle(.segmented)
+
+            Text(historyCountLine)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ForEach(Array(visibleHistory.enumerated()), id: \.offset) { _, record in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(historyRowText(record))
+                        .font(.subheadline)
+                    if !record.error.isEmpty {
+                        Text(record.error)
+                            .font(.caption)
+                            .foregroundStyle(record.success ? Color.secondary : Color.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Button(role: .destructive) {
+                ApplyHistory.clear()
+                refreshHistory()
+            } label: {
+                Label("Clear History", systemImage: "trash")
+            }
+            .disabled(history.isEmpty)
+        }
+    }
+
+    /// Newest-first, filtered and searched exactly as the reference's
+    /// `_refresh_history` does (`settings.py:783`).
+    private var matchingHistory: [ApplyHistory.Record] {
+        let query = historySearch.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return history.reversed().filter { item in
+            if historyMode != "all" && item.mode != historyMode { return false }
+            if historyResult == "success" && !item.success { return false }
+            if historyResult == "failed" && item.success { return false }
+            guard !query.isEmpty else { return true }
+            let haystack = [item.timestamp, item.mode, item.device, item.model, item.ios, item.error]
+                .joined(separator: " ").lowercased()
+            return haystack.contains(query)
+        }
+    }
+
+    /// The reference caps the list at ten rows (`settings.py:804`).
+    private var visibleHistory: [ApplyHistory.Record] {
+        Array(matchingHistory.prefix(10))
+    }
+
+    private var historyCountLine: String {
+        let matches = matchingHistory.count
+        if matches > visibleHistory.count {
+            return "Showing \(visibleHistory.count) of \(matches) operations"
+        }
+        if matches > 0 {
+            return "\(matches) operations found"
+        }
+        let filtered = !historySearch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || historyMode != "all" || historyResult != "all"
+        return filtered ? "No matching operations" : "No operations recorded yet"
+    }
+
+    /// One row's line, in the reference's own vocabulary
+    /// (`settings.py:823`): `when • mode • device • iOS version • result`.
+    private func historyRowText(_ record: ApplyHistory.Record) -> String {
+        let mode = record.mode == "apply" ? "Apply" : "Reset"
+        let result = record.success ? "Success" : "Failed"
+        let device = record.device.isEmpty ? "Unknown device" : record.device
+        let ios = record.ios.isEmpty ? "?" : record.ios
+        return "\(Self.displayTimestamp(record.timestamp))  •  \(mode)  •  "
+            + "\(device)  •  iOS \(ios)  •  \(result)"
+    }
+
+    /// `datetime.fromisoformat(...).strftime("%Y-%m-%d %H:%M")`, falling back to
+    /// the stored string when it is not a parseable timestamp.
+    private static func displayTimestamp(_ raw: String) -> String {
+        guard let date = ISO8601DateFormatter().date(from: raw) else { return raw }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        formatter.timeZone = .current
+        return formatter.string(from: date)
+    }
+
+    private func refreshHistory() {
+        history = ApplyHistory.load()
     }
 
     // MARK: - Development

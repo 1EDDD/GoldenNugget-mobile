@@ -89,6 +89,15 @@ struct GoldenNuggetView: View {
     /// cannot wipe the one that replaced it.
     @State private var statusToken = 0
     @State private var progress: Double?
+    /// The engine's remaining-time estimate (`""` until a rate is known), fed by
+    /// `onEta` alongside progress.
+    @State private var eta = ""
+    /// The plan the confirmation sheet is showing, and whether it is up.
+    ///
+    /// The apply used to run straight off the button; the reference routes it
+    /// through a summary the user confirms, and only then opens the device.
+    @State private var applyPreview: ApplyPreview?
+    @State private var showApplyConfirm = false
     /// The pages the reset sheet has open, and whether a reset is in flight.
     ///
     /// Separate from `running`, which is the *apply* run: the two never overlap
@@ -191,6 +200,12 @@ struct GoldenNuggetView: View {
             GoldenNuggetEngine.shared.onProgress = { value in
                 Task { @MainActor in progress = value.isNaN ? nil : value }
             }
+            // The reference's status line carries the backup's remaining-time
+            // estimate next to the percentage (`eta.py` feeds it); the same story
+            // as `onProgress` — the callback is off-main, the handler hops.
+            GoldenNuggetEngine.shared.onEta = { value in
+                Task { @MainActor in eta = value }
+            }
             // Claim the process-wide Rust logger before anything can call
             // setLogging()/start(): the Rust side latches the first
             // idevice_init_logger call and would otherwise keep file logging off.
@@ -228,6 +243,18 @@ struct GoldenNuggetView: View {
             ResetPagesSheet(deviceVersion: identity.version,
                             isRunning: resetting,
                             onReset: performReset(pages:))
+        }
+        // The pre-apply summary the reference shows before touching the device.
+        // Applying from here is the only path to `runApply()`.
+        .sheet(isPresented: $showApplyConfirm) {
+            if let applyPreview {
+                ApplyConfirmSheet(preview: applyPreview,
+                                  onApply: {
+                                      showApplyConfirm = false
+                                      runApply()
+                                  },
+                                  onCancel: { showApplyConfirm = false })
+            }
         }
     }
 
@@ -344,9 +371,17 @@ struct GoldenNuggetView: View {
             ProgressView(value: progress ?? 0, total: 100)
                 .progressViewStyle(.linear)
                 .opacity(progress == nil ? 0.35 : 1)
-            Text(progress == nil ? "working…" : String(format: "%.0f%%", progress ?? 0))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack {
+                Text(progress == nil ? "working…" : String(format: "%.0f%%", progress ?? 0))
+                if !eta.isEmpty {
+                    Spacer()
+                    // `eta.py`'s "m:ss" remaining — empty until a stable rate is
+                    // known, so this line simply does not appear early on.
+                    Text("≈ \(eta) remaining")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
     }
 
@@ -384,6 +419,7 @@ struct GoldenNuggetView: View {
             var text = ""
             var tone: GoldenTone = .primary
             var succeeded = false
+            var recordedError = ""
             do {
                 try await GoldenNuggetEngine.shared.resetPages(pages: pages)
                 text = "Reset done. Reboot the device."
@@ -392,10 +428,20 @@ struct GoldenNuggetView: View {
             } catch let failure as TransportFailure where failure.isCancellation {
                 text = "⏹ stopped by the user (\(failure.label))"
                 tone = .warning
+                recordedError = "stopped by the user (\(failure.label))"
             } catch {
                 text = "❌ \(error.localizedDescription)"
                 tone = .error
+                recordedError = error.localizedDescription
             }
+            // The reset half of the operation history (`apply_history.py`).
+            let device = identity
+            ApplyHistory.record(mode: "reset",
+                                success: succeeded,
+                                error: recordedError,
+                                device: device.describe,
+                                model: device.productType,
+                                ios: device.version)
             await MainActor.run {
                 resetting = false
                 showStatus(text, tone)
@@ -952,6 +998,26 @@ struct GoldenNuggetView: View {
     }
 
     private func applyTweaks() {
+        // The reference confirms before it restores: build the plan the engine
+        // would run (the same compile, so it cannot drift), then show the
+        // summary.  A status-bar payload that cannot be built fails here, before
+        // a confirmation the apply would then refuse.
+        do {
+            applyPreview = try ApplyPreview.build(
+                selection: tweakSelection,
+                statusBar: statusBarSelection,
+                skipSetupEnabled: SkipSetupSettings.shared.skipSetupEnabled,
+                deviceVersion: identity.version,
+                isIPhone: identity.isIPhone)
+            showApplyConfirm = true
+        } catch {
+            errorText = error.localizedDescription
+        }
+    }
+
+    /// The confirmed half of `applyTweaks` — everything the button used to do
+    /// directly, now behind the summary sheet.
+    private func runApply() {
         running = true
         runStarted = Date()
         RunLog.shared.clear()
@@ -964,6 +1030,7 @@ struct GoldenNuggetView: View {
             var text = ""
             var tone: GoldenTone = .primary
             var succeeded = false
+            var recordedError = ""
             do {
                 try await GoldenNuggetEngine.shared.applyTweaks(selection: snapshot,
                                                                 posterBoard: wallpapers,
@@ -979,10 +1046,22 @@ struct GoldenNuggetView: View {
                 // written both of these into the log file.
                 text = "⏹ stopped by the user (\(failure.label))"
                 tone = .warning
+                recordedError = "stopped by the user (\(failure.label))"
             } catch {
                 text = "❌ \(error.localizedDescription)"
                 tone = .error
+                recordedError = error.localizedDescription
             }
+            // The apply/reset history the reference keeps in
+            // `AppDataLocation/GoldenNugget/History/operations.json`
+            // (`apply_history.record_operation`).  Best-effort and off the main
+            // actor: recording never changes the operation's own result.
+            ApplyHistory.record(mode: "apply",
+                                success: succeeded,
+                                error: recordedError,
+                                device: device.describe,
+                                model: device.productType,
+                                ios: device.version)
             await MainActor.run {
                 running = false
                 runStarted = nil

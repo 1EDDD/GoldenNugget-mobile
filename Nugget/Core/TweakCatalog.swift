@@ -341,7 +341,7 @@ enum TweakCatalog {
             iphoneOnly: false,
             ipadOnly: false,
             disabled: false,
-            detail: "Disables HDR tone-mapping in the Solarium renderer. Can fix washed-out or over-bright Liquid Glass areas. Enabled when the switch is OFF.",
+            detail: "Disables HDR tone-mapping in the Solarium renderer. Can fix washed-out or over-bright Liquid Glass areas. Select this tweak to disable HDR.",
             multiValues: nil
         ),
         TweakSpec(
@@ -2211,7 +2211,7 @@ enum TweakCatalog {
             iphoneOnly: false,
             ipadOnly: true,
             disabled: false,
-            detail: "Uses the old fixed tab bar style instead of the floating tab bar on iPad. Enabled when the switch is OFF.",
+            detail: "Uses the old fixed tab bar style instead of the floating tab bar on iPad. Select this tweak to disable the floating tab bar.",
             multiValues: nil
         ),
         TweakSpec(

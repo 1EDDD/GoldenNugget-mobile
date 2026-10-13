@@ -10,13 +10,18 @@
 		3C77F32162E7F459FFB57B7D /* AfcFileExplorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C423B2BB4DB06ECED0B5F73 /* AfcFileExplorer.swift */; };
 		B7AF9075663AA9789413D094 /* AfcMediaBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC6D8068D586482F477E4CF0 /* AfcMediaBackup.swift */; };
 		AC71F3A22E4B4C0A9D51B7C8 /* Airlift.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC71F3A12E4B4C0A9D51B7C8 /* Airlift.swift */; };
+		13866A4B307E3300008AEB97 /* AirliftFFI in Frameworks */ = {isa = PBXBuildFile; productRef = B6CC7F8101BD13AD344DBB88 /* AirliftFFI */; };
 		4CFE9ACC1963E95C6B7220A8 /* AirliftPairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6596FEFE7216F1A02B1924D7 /* AirliftPairing.swift */; };
 		484D0347B41ADB35555A017F /* AppPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91396F621D29D7FA9600BD21 /* AppPaths.swift */; };
 		D12A90C194539DFA53831C5A /* AppShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDCF91FEC1CCE1B24D2BB264 /* AppShell.swift */; };
+		DBF317662A260A55D69FF18C /* ApplyConfirmSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF99C7EDE8DE49EF67A7EDC0 /* ApplyConfirmSheet.swift */; };
+		354748D4BE1EFB48EB238E41 /* ApplyHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5FA821D73DEA33735DA30A7 /* ApplyHistory.swift */; };
+		C2B1A91AF8BFA6091C7AF1C1 /* ApplyPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF50583C4467C12D3DC1B8B1 /* ApplyPreview.swift */; };
 		A1C0DE5E7B4F6A3C8D2E1908 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1C0DE5E7B4F6A3C8D2E1907 /* Assets.xcassets */; };
 		A1C0DE5E7B4F6A3C8D2E1909 /* Assets.xcassets/AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = A1C0DE5E7B4F6A3C8D2E190A /* Assets.xcassets/AppIcon.icon */; };
 		B37B8CC1C1B46CD15DAF3381 /* AsyncRacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC71EBF95E1574B88783B6B /* AsyncRacing.swift */; };
 		FAACE511C387E7F92C89693D /* AutoSaveBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9512D830DC6552FBC02D519 /* AutoSaveBootstrap.swift */; };
+		B933F22CE6A69D05ADB1568E /* BackupBaseline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C19BDE98181BA2AC0FD3DAA /* BackupBaseline.swift */; };
 		E6A1A5E439330FF34ACA9B86 /* BackupInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B0606577F22DD11B401E93 /* BackupInjector.swift */; };
 		3E0DA5B2355E5D21A0216CFA /* ChannelRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6049D8D015CF48961C744709 /* ChannelRecovery.swift */; };
 		93CC8FCB89EBB82F4F129CD4 /* DaemonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 554F3E8B6811996F0E9B14BF /* DaemonsView.swift */; };
@@ -30,6 +35,7 @@
 		5DD3A0C569E72A5156269FA3 /* GoldenNuggetAutosave.swift in Sources */ = {isa = PBXBuildFile; fileRef = 620C48822AEE820170AF577B /* GoldenNuggetAutosave.swift */; };
 		2E44104D7A9958A98A7860EF /* GoldenNuggetEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 680BEDC6838E13FA5AEE059E /* GoldenNuggetEngine.swift */; };
 		D8CB50EA9A6F61C7683E54A6 /* GoldenNuggetPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37369801556192F20D0DF2D8 /* GoldenNuggetPreset.swift */; };
+		B8FDD3E1A5D6D84F53B907E0 /* GoldenNuggetPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E02DA5B33CC381519A3B1C /* GoldenNuggetPresets.swift */; };
 		11558E54DB612291BA4B5C73 /* GoldenNuggetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4432398FF02541D88F5E11B /* GoldenNuggetView.swift */; };
 		4C6ABCDA5E29802D75B2F8DF /* GrappaToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8F3D3ADE8DD40A0B221EFF /* GrappaToken.swift */; };
 		49D6B9D95723713BD06BE44A /* HostManifests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1586D9A781CB24F33910162E /* HostManifests.swift */; };
@@ -58,6 +64,8 @@
 		FA786E5D4A1B85135B773FBC /* PosterBoardTendie.swift in Sources */ = {isa = PBXBuildFile; fileRef = B611D828253F18B5A9CDFE0E /* PosterBoardTendie.swift */; };
 		AA1E5E9A6CF388051D140AE3 /* PosterBoardVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1EF03EBDE439B7665BF877 /* PosterBoardVideo.swift */; };
 		C3451315BB71389FE8DC092B /* PosterBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4BE2466826B04C5BC5936DF /* PosterBoardView.swift */; };
+		B069F0E2F9A3CE666C962B6B /* PresetManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 176D4D714271C56A25E88FFA /* PresetManagerView.swift */; };
+		DC5D79C56B06180CE0057D2C /* ProgressEta.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BE5E7B682D40A92F9508C75 /* ProgressEta.swift */; };
 		52F9CFD7A2DB9E90B4FE71D1 /* ProgressPulse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F91169C201521D8C0F3B86 /* ProgressPulse.swift */; };
 		8969C92A6ECADAC5DA057A58 /* ProtectiveBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2521FA7674D8EDC6F4DF724 /* ProtectiveBackup.swift */; };
 		5A01780C82E541CA0340E0E0 /* ResetPagesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD4EED31AD30A3DEA76C9577 /* ResetPagesSheet.swift */; };
@@ -78,6 +86,7 @@
 		4E0010FD17DF55D881CB25AA /* TweakCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77B7AF6A5B6F051A9CA68A4D /* TweakCatalog.swift */; };
 		2E8EE1BA2040A369F85AE3F3 /* TweakCatalogDaemons.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC4576E97290242BE461F36 /* TweakCatalogDaemons.swift */; };
 		701F631AFAECD47690B8FB7D /* TweakCompiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F2C43731423B70CB6C4334 /* TweakCompiler.swift */; };
+		29C7E155149F1B49DB877811 /* TweakConflicts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 309D29B5C767B253BFAC66DE /* TweakConflicts.swift */; };
 		B455D7BEF37CFB628AB7865C /* TweakDomainMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9346ED8851E31EE614F7302D /* TweakDomainMap.swift */; };
 		6EAA0BD3E97DAA974DBCCAF4 /* TweakInjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5115129235D0DAF38C497A28 /* TweakInjector.swift */; };
 		28E9216B55D8DB6B7F1F4AF6 /* TweakModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 980679A3C896C7012DDD8F66 /* TweakModel.swift */; };
@@ -91,6 +100,7 @@
 		91AEAC90A50A9A1D472D0FDA /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 96D6AABAE44982B09FFA8F97 /* WebKit.framework */; };
 		637D690748869293AAB5B9C8 /* WireCensus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 343E173B6BF30E9113DD3CA4 /* WireCensus.swift */; };
 		46D5344DC490FE396B462855 /* WirelessPairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6F22CBA7BA5C472D320DE4 /* WirelessPairing.swift */; };
+		13866A4A307E3300008AEB97 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = B6CC7F8101BD13AD344DBB87 /* ZIPFoundation */; };
 		E801AE73005EB73126FC4367 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 92FE9028690931EFD26A8AFF /* libsqlite3.tbd */; };
 /* End PBXBuildFile section */
 
@@ -101,10 +111,14 @@
 		6596FEFE7216F1A02B1924D7 /* AirliftPairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirliftPairing.swift; sourceTree = "<group>"; };
 		91396F621D29D7FA9600BD21 /* AppPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPaths.swift; sourceTree = "<group>"; };
 		FDCF91FEC1CCE1B24D2BB264 /* AppShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShell.swift; sourceTree = "<group>"; };
+		AF99C7EDE8DE49EF67A7EDC0 /* ApplyConfirmSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplyConfirmSheet.swift; sourceTree = "<group>"; };
+		A5FA821D73DEA33735DA30A7 /* ApplyHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplyHistory.swift; sourceTree = "<group>"; };
+		CF50583C4467C12D3DC1B8B1 /* ApplyPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplyPreview.swift; sourceTree = "<group>"; };
 		A1C0DE5E7B4F6A3C8D2E1907 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1C0DE5E7B4F6A3C8D2E190A /* Assets.xcassets/AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = Assets.xcassets/AppIcon.icon; sourceTree = "<group>"; };
 		BAC71EBF95E1574B88783B6B /* AsyncRacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncRacing.swift; sourceTree = "<group>"; };
 		E9512D830DC6552FBC02D519 /* AutoSaveBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoSaveBootstrap.swift; sourceTree = "<group>"; };
+		8C19BDE98181BA2AC0FD3DAA /* BackupBaseline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupBaseline.swift; sourceTree = "<group>"; };
 		E3B0606577F22DD11B401E93 /* BackupInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupInjector.swift; sourceTree = "<group>"; };
 		6049D8D015CF48961C744709 /* ChannelRecovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelRecovery.swift; sourceTree = "<group>"; };
 		554F3E8B6811996F0E9B14BF /* DaemonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaemonsView.swift; sourceTree = "<group>"; };
@@ -120,6 +134,7 @@
 		680BEDC6838E13FA5AEE059E /* GoldenNuggetEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenNuggetEngine.swift; sourceTree = "<group>"; };
 		58A0011193A068B87B3F76BA /* GoldenNuggetMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GoldenNuggetMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		37369801556192F20D0DF2D8 /* GoldenNuggetPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenNuggetPreset.swift; sourceTree = "<group>"; };
+		A3E02DA5B33CC381519A3B1C /* GoldenNuggetPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenNuggetPresets.swift; sourceTree = "<group>"; };
 		F4432398FF02541D88F5E11B /* GoldenNuggetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenNuggetView.swift; sourceTree = "<group>"; };
 		5D8F3D3ADE8DD40A0B221EFF /* GrappaToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrappaToken.swift; sourceTree = "<group>"; };
 		1586D9A781CB24F33910162E /* HostManifests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostManifests.swift; sourceTree = "<group>"; };
@@ -147,6 +162,8 @@
 		B611D828253F18B5A9CDFE0E /* PosterBoardTendie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PosterBoardTendie.swift; sourceTree = "<group>"; };
 		2E1EF03EBDE439B7665BF877 /* PosterBoardVideo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PosterBoardVideo.swift; sourceTree = "<group>"; };
 		C4BE2466826B04C5BC5936DF /* PosterBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PosterBoardView.swift; sourceTree = "<group>"; };
+		176D4D714271C56A25E88FFA /* PresetManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetManagerView.swift; sourceTree = "<group>"; };
+		8BE5E7B682D40A92F9508C75 /* ProgressEta.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressEta.swift; sourceTree = "<group>"; };
 		10F91169C201521D8C0F3B86 /* ProgressPulse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressPulse.swift; sourceTree = "<group>"; };
 		F2521FA7674D8EDC6F4DF724 /* ProtectiveBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectiveBackup.swift; sourceTree = "<group>"; };
 		AD4EED31AD30A3DEA76C9577 /* ResetPagesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetPagesSheet.swift; sourceTree = "<group>"; };
@@ -167,6 +184,7 @@
 		77B7AF6A5B6F051A9CA68A4D /* TweakCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TweakCatalog.swift; sourceTree = "<group>"; };
 		CEC4576E97290242BE461F36 /* TweakCatalogDaemons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TweakCatalogDaemons.swift; sourceTree = "<group>"; };
 		17F2C43731423B70CB6C4334 /* TweakCompiler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TweakCompiler.swift; sourceTree = "<group>"; };
+		309D29B5C767B253BFAC66DE /* TweakConflicts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TweakConflicts.swift; sourceTree = "<group>"; };
 		9346ED8851E31EE614F7302D /* TweakDomainMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TweakDomainMap.swift; sourceTree = "<group>"; };
 		5115129235D0DAF38C497A28 /* TweakInjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TweakInjector.swift; sourceTree = "<group>"; };
 		980679A3C896C7012DDD8F66 /* TweakModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TweakModel.swift; sourceTree = "<group>"; };
@@ -189,6 +207,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				13866A4B307E3300008AEB97 /* AirliftFFI in Frameworks */,
+				13866A4A307E3300008AEB97 /* ZIPFoundation in Frameworks */,
 				9616622130656E770045CB83 /* Minimuxer in Frameworks */,
 				E801AE73005EB73126FC4367 /* libsqlite3.tbd in Frameworks */,
 				91AEAC90A50A9A1D472D0FDA /* WebKit.framework in Frameworks */,
@@ -214,8 +234,11 @@
 				AC71F3A12E4B4C0A9D51B7C8 /* Airlift.swift */,
 				6596FEFE7216F1A02B1924D7 /* AirliftPairing.swift */,
 				91396F621D29D7FA9600BD21 /* AppPaths.swift */,
+				A5FA821D73DEA33735DA30A7 /* ApplyHistory.swift */,
+				CF50583C4467C12D3DC1B8B1 /* ApplyPreview.swift */,
 				BAC71EBF95E1574B88783B6B /* AsyncRacing.swift */,
 				E9512D830DC6552FBC02D519 /* AutoSaveBootstrap.swift */,
+				8C19BDE98181BA2AC0FD3DAA /* BackupBaseline.swift */,
 				E3B0606577F22DD11B401E93 /* BackupInjector.swift */,
 				6049D8D015CF48961C744709 /* ChannelRecovery.swift */,
 				EAA16F4B5AB181B1CF4CE3E1 /* DevSettings.swift */,
@@ -225,6 +248,7 @@
 				620C48822AEE820170AF577B /* GoldenNuggetAutosave.swift */,
 				680BEDC6838E13FA5AEE059E /* GoldenNuggetEngine.swift */,
 				37369801556192F20D0DF2D8 /* GoldenNuggetPreset.swift */,
+				A3E02DA5B33CC381519A3B1C /* GoldenNuggetPresets.swift */,
 				5D8F3D3ADE8DD40A0B221EFF /* GrappaToken.swift */,
 				1586D9A781CB24F33910162E /* HostManifests.swift */,
 				A5DC362DFE508D1A75B921BC /* InFlightCall.swift */,
@@ -245,6 +269,7 @@
 				08CCA12F39D94B614A61B482 /* PosterBoardTemplates.swift */,
 				B611D828253F18B5A9CDFE0E /* PosterBoardTendie.swift */,
 				2E1EF03EBDE439B7665BF877 /* PosterBoardVideo.swift */,
+				8BE5E7B682D40A92F9508C75 /* ProgressEta.swift */,
 				10F91169C201521D8C0F3B86 /* ProgressPulse.swift */,
 				F2521FA7674D8EDC6F4DF724 /* ProtectiveBackup.swift */,
 				EABB4369B839C2CD9D0D7C98 /* RestoreRunner.swift */,
@@ -260,6 +285,7 @@
 				77B7AF6A5B6F051A9CA68A4D /* TweakCatalog.swift */,
 				CEC4576E97290242BE461F36 /* TweakCatalogDaemons.swift */,
 				17F2C43731423B70CB6C4334 /* TweakCompiler.swift */,
+				309D29B5C767B253BFAC66DE /* TweakConflicts.swift */,
 				9346ED8851E31EE614F7302D /* TweakDomainMap.swift */,
 				5115129235D0DAF38C497A28 /* TweakInjector.swift */,
 				980679A3C896C7012DDD8F66 /* TweakModel.swift */,
@@ -281,6 +307,14 @@
 				97E9B8C056917EBC62695D5E /* Frameworks */,
 				AA0EDB9294503E2A4D9A6E46 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		06667DFE4111D0F5D3F480D3 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				C9559BD5A18FC7AD72A5A55A /* Extensions.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		0F9A4C47E10A06BD2A4CA52A /* Nugget */ = {
@@ -325,6 +359,7 @@
 			children = (
 				06667DFE4111D0F5D3F480D3 /* Extensions */,
 				FDCF91FEC1CCE1B24D2BB264 /* AppShell.swift */,
+				AF99C7EDE8DE49EF67A7EDC0 /* ApplyConfirmSheet.swift */,
 				554F3E8B6811996F0E9B14BF /* DaemonsView.swift */,
 				E5FAB0C4930AF5551C47DEAD /* FilesView.swift */,
 				9853C36FF40ACBC2ABFEB465 /* FirstRunView.swift */,
@@ -334,6 +369,7 @@
 				026A78189155F5FE77680B38 /* NativeUI.swift */,
 				0BE93548CC1372E18A63F5EB /* PasscodeThemeView.swift */,
 				C4BE2466826B04C5BC5936DF /* PosterBoardView.swift */,
+				176D4D714271C56A25E88FFA /* PresetManagerView.swift */,
 				AD4EED31AD30A3DEA76C9577 /* ResetPagesSheet.swift */,
 				9E007DB1B5DADCC9E6394E17 /* RunLog.swift */,
 				9F72AE6CD4E8EC369A26D247 /* SettingsView.swift */,
@@ -361,14 +397,6 @@
 				A1C0DE5E7B4F6A3C8D2E190A /* Assets.xcassets/AppIcon.icon */,
 			);
 			path = GoldenNuggetMobile.app;
-			sourceTree = "<group>";
-		};
-		06667DFE4111D0F5D3F480D3 /* Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				C9559BD5A18FC7AD72A5A55A /* Extensions.swift */,
-			);
-			path = Extensions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -450,8 +478,12 @@
 				4CFE9ACC1963E95C6B7220A8 /* AirliftPairing.swift in Sources */,
 				484D0347B41ADB35555A017F /* AppPaths.swift in Sources */,
 				D12A90C194539DFA53831C5A /* AppShell.swift in Sources */,
+				DBF317662A260A55D69FF18C /* ApplyConfirmSheet.swift in Sources */,
+				354748D4BE1EFB48EB238E41 /* ApplyHistory.swift in Sources */,
+				C2B1A91AF8BFA6091C7AF1C1 /* ApplyPreview.swift in Sources */,
 				B37B8CC1C1B46CD15DAF3381 /* AsyncRacing.swift in Sources */,
 				FAACE511C387E7F92C89693D /* AutoSaveBootstrap.swift in Sources */,
+				B933F22CE6A69D05ADB1568E /* BackupBaseline.swift in Sources */,
 				E6A1A5E439330FF34ACA9B86 /* BackupInjector.swift in Sources */,
 				3E0DA5B2355E5D21A0216CFA /* ChannelRecovery.swift in Sources */,
 				93CC8FCB89EBB82F4F129CD4 /* DaemonsView.swift in Sources */,
@@ -465,6 +497,7 @@
 				5DD3A0C569E72A5156269FA3 /* GoldenNuggetAutosave.swift in Sources */,
 				2E44104D7A9958A98A7860EF /* GoldenNuggetEngine.swift in Sources */,
 				D8CB50EA9A6F61C7683E54A6 /* GoldenNuggetPreset.swift in Sources */,
+				B8FDD3E1A5D6D84F53B907E0 /* GoldenNuggetPresets.swift in Sources */,
 				11558E54DB612291BA4B5C73 /* GoldenNuggetView.swift in Sources */,
 				4C6ABCDA5E29802D75B2F8DF /* GrappaToken.swift in Sources */,
 				49D6B9D95723713BD06BE44A /* HostManifests.swift in Sources */,
@@ -492,6 +525,8 @@
 				FA786E5D4A1B85135B773FBC /* PosterBoardTendie.swift in Sources */,
 				AA1E5E9A6CF388051D140AE3 /* PosterBoardVideo.swift in Sources */,
 				C3451315BB71389FE8DC092B /* PosterBoardView.swift in Sources */,
+				B069F0E2F9A3CE666C962B6B /* PresetManagerView.swift in Sources */,
+				DC5D79C56B06180CE0057D2C /* ProgressEta.swift in Sources */,
 				52F9CFD7A2DB9E90B4FE71D1 /* ProgressPulse.swift in Sources */,
 				8969C92A6ECADAC5DA057A58 /* ProtectiveBackup.swift in Sources */,
 				5A01780C82E541CA0340E0E0 /* ResetPagesSheet.swift in Sources */,
@@ -512,6 +547,7 @@
 				4E0010FD17DF55D881CB25AA /* TweakCatalog.swift in Sources */,
 				2E8EE1BA2040A369F85AE3F3 /* TweakCatalogDaemons.swift in Sources */,
 				701F631AFAECD47690B8FB7D /* TweakCompiler.swift in Sources */,
+				29C7E155149F1B49DB877811 /* TweakConflicts.swift in Sources */,
 				B455D7BEF37CFB628AB7865C /* TweakDomainMap.swift in Sources */,
 				6EAA0BD3E97DAA974DBCCAF4 /* TweakInjector.swift in Sources */,
 				28E9216B55D8DB6B7F1F4AF6 /* TweakModel.swift in Sources */,
@@ -567,7 +603,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = entitlements.plist;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -588,7 +624,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = layout/Applications/GoldenNuggetMobile.app/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 9.5.3;
+				MARKETING_VERSION = 9.6.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -639,7 +675,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = entitlements.plist;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -654,7 +690,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = layout/Applications/GoldenNuggetMobile.app/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 9.5.3;
+				MARKETING_VERSION = 9.6.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.awesomenull.goldennugget;
@@ -673,7 +709,10 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = L7HX85L6GU;
+				CURRENT_PROJECT_VERSION = 0;
+				DEVELOPMENT_TEAM = R56X75AKLF;
+				INFOPLIST_KEY_CFBundleDisplayName = GoldenNugget;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -696,7 +735,10 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = L7HX85L6GU;
+				CURRENT_PROJECT_VERSION = 0;
+				DEVELOPMENT_TEAM = R56X75AKLF;
+				INFOPLIST_KEY_CFBundleDisplayName = GoldenNugget;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -748,19 +790,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Minimuxer;
 		};
-		/* The app unpacks `.tendies` wallpaper packs, which are ZIPs. Second
-		   product of the same local package (Vendor), so no new
-		   XCLocalSwiftPackageReference is involved. Mirrors project.yml and
-		   Package.swift; XcodeGen is not installed here, so this file cannot be
-		   regenerated from that one and the three have to agree by hand. */
 		B6CC7F8101BD13AD344DBB87 /* ZIPFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ZIPFoundation;
 		};
-		/* The AirTraffic sandbox escape (AirLift), vendored as a static .a in
-		   the same local package, so no new XCLocalSwiftPackageReference is
-		   involved. Mirrors project.yml and Package.swift by hand, like the two
-		   above. */
 		B6CC7F8101BD13AD344DBB88 /* AirliftFFI */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AirliftFFI;

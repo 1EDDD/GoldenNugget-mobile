@@ -346,16 +346,20 @@ class Port:
     def payload_order(self) -> str:
         """Which side of the payload list the skip-setup files are on.
 
-        Scoped to `resetPages`, because `tweakPayloads:` also appears in `applyTweaks`
-        and `re.search` would otherwise have matched that one and reported the apply
-        path's order as the reset's.
+        Scoped to the reset run body, because `tweakPayloads:` also appears in
+        `applyTweaks` and `re.search` would otherwise have matched that one and
+        reported the apply path's order as the reset's. The body lives in
+        `resetPagesRun`; `resetPages` is now only the `loggedRun` wrapper, so the
+        scope falls back to it for older sources.
         """
-        body = re.search(r"func resetPages\(.*?\n    \}", self.engine_src, re.S)
+        body = re.search(r"(?:private )?func resetPagesRun\(.*?\n    \}", self.engine_src, re.S)
         if not body:
-            sys.exit("error: resetPages() not found in GoldenNuggetEngine.swift")
+            body = re.search(r"func resetPages\(.*?\n    \}", self.engine_src, re.S)
+        if not body:
+            sys.exit("error: resetPagesRun()/resetPages() not found in GoldenNuggetEngine.swift")
         m = re.search(r"tweakPayloads: (.+?),", body.group(0))
         if not m:
-            sys.exit("error: tweakPayloads not found inside resetPages()")
+            sys.exit("error: tweakPayloads not found inside resetPagesRun()")
         expr = m.group(1)
         if expr.startswith("skipSetup.payloads"):
             return "first"

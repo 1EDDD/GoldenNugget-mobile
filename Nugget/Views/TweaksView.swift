@@ -61,11 +61,15 @@ struct TweaksView: View {
     /// user has since overridden.
     @State private var collapsedSections: Set<TweakSection> = []
     @State private var foldedByHand: Set<TweakSection> = []
+    /// The search field's text. Filtering happens through `visibleSpecs`, so a
+    /// section with no matches disappears and the count line tracks the query.
+    @State private var searchText = ""
 
     var body: some View {
         List {
             identitySection
             importSection
+            if searchActive && visibleSpecs.isEmpty { emptySearchSection }
             tweakSections
             if let importReport { reportSection(importReport) }
             if let importError { errorSection(importError) }
@@ -73,6 +77,12 @@ struct TweaksView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Tweaks")
+        // The reference's list search (`gui/ios/tweaks.py`, `ListSearch`): a
+        // field that filters the cards by every whitespace-separated word of
+        // the query, over the title, the description and the tweak's id.
+        .searchable(text: $searchText,
+                    placement: .navigationBarDrawer(displayMode: .always),
+                    prompt: "Search tweaks")
         // Compact widths only -- on a tablet the split view draws its own sidebar
         // toggle, and a second button beside it is the duplicate-controls mess.
         .goldenSidebarButton()
@@ -235,6 +245,28 @@ struct TweaksView: View {
         TweakCatalog.all.filter {
             $0.section != .daemons
                 && $0.isCompatible(deviceVersion: identity.version, isIPhone: identity.isIPhone)
+                && matchesSearch($0)
+        }
+    }
+
+    /// Whether the search field holds a non-empty query.
+    private var searchActive: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// The reference matches a tweak's title, its description and its id
+    /// (`gui/ios/tweaks.py`: `self.search.matches(title, description, tid.name)`).
+    /// The registry id is the `tid.name` here.
+    private func matchesSearch(_ spec: TweakSpec) -> Bool {
+        searchMatches(query: searchText, spec.title, spec.detail ?? "", spec.id)
+    }
+
+    /// The reference's `IOSSearchEmpty`: shown only while a query is live and
+    /// nothing survived it.
+    private var emptySearchSection: some View {
+        Section {
+            Text("No matches found.")
+                .foregroundStyle(.secondary)
         }
     }
 
