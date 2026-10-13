@@ -64,6 +64,11 @@ final class WirelessPairing: NSObject, ObservableObject, NetServiceDelegate {
     /// device does not confuse it with a stale "Pair with SideStore" row.
     private static let hostName = "GoldenNugget"
 
+    /// The name the device lists in Settings → Privacy & Security → Developer
+    /// Mode, where the user taps the pairable host to pair.  Exposed so the
+    /// pairing UI can name that exact row instead of repeating the literal.
+    static var displayName: String { hostName }
+
     /// Where the altIRK from the last successful run is kept.  `al_pairing_run_host`
     /// accepts it back so the host keeps the same trusted identity across runs;
     /// without it every run is a brand-new host to the device.

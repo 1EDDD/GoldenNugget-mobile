@@ -295,10 +295,13 @@ struct FirstRunView: View {
                 Text("PIN: \(pin)")
                     .font(.title3.monospaced().weight(.semibold))
                     .textSelection(.enabled)
-                NativeNote("Confirm this PIN on the device to finish pairing.")
+                NativeNote("Confirm this PIN in Settings → Privacy & Security → Developer "
+                    + "Mode → “Pair with \(WirelessPairing.displayName)” to finish pairing.")
             } else {
-                NativeNote("Leave this screen open. iOS 27 connects this iPhone to the "
-                    + "advertised pairing service itself — no computer is involved.")
+                NativeNote("Leave this screen open, then open Settings → Privacy & Security → "
+                    + "Developer Mode on this iPhone and tap “Pair with "
+                    + "\(WirelessPairing.displayName)”. iOS 27 connects the phone to the "
+                    + "advertised service itself — no computer is involved.")
             }
             Button(role: .destructive) {
                 wirelessPair.cancel()
