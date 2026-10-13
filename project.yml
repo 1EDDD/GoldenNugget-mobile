@@ -1,18 +1,36 @@
-# XcodeGen manifest for GoldenNuggetMobile.xcodeproj.
+# XcodeGen manifest for GoldenNuggetMobile.xcodeproj — the source of truth for
+# the project.  XcodeGen is installed (2.46) and
 #
-# XcodeGen is NOT installed here, so this file cannot be run locally and
-# project.pbxproj cannot be regenerated from it.  It is kept as the statement of
-# intent for the project, and `- path: Nugget` below is deliberately the same
-# source root Package.swift declares.
+#     xcodegen generate
 #
-# Package.swift is the single source of truth for the source list.  After adding
-# or removing a file under Nugget/, run:
+# writes project.pbxproj from this file, so that file is a build product and
+# must not be edited by hand.
 #
-#     scripts/sync-pbxproj-sources.py
+# Package.swift is, separately, the source of truth for the *source list*:
+# `- path: Nugget` below is deliberately the same source root Package.swift
+# declares.  XcodeGen cannot know that list — it does not read Package.swift —
+# so generation ends by running `scripts/sync-pbxproj-sources.py` (see
+# `postGenCommand` below), which asks SwiftPM what the target resolves and
+# rewrites the Sources phase to match.  `xcodegen generate` followed by that
+# script is idempotent: running the pair twice writes an identical file, and
+# `scripts/sync-pbxproj-sources.py --check` passes on the result.
 #
-# which asks SwiftPM what the target resolves and reconciles project.pbxproj to
-# match.  If XcodeGen ever becomes available, regenerating from this file and
-# then running that script must leave project.pbxproj unchanged.
+# XcodeGen 2.46 quirks this file works around — re-check after an upgrade:
+#
+#   * its `createIntermediateGroups` default would nest the Icon Composer
+#     document inside a second, same-named "Assets.xcassets" group beside the
+#     catalog it lives in, and the two objects then carry random `TEMP_…` IDs —
+#     which makes every regeneration churn.  The document's source entry pins
+#     `createIntermediateGroups: false` so it is emitted as an ordinary sibling
+#     file reference instead.
+#   * it types the document `wrapper.icon` where the hand-written project used
+#     `folder.iconcomposer.icon`.  actool accepts `wrapper.icon` — the Xcode
+#     build routes it to AssetCatalogCompiler, `.icon` and catalog alike are
+#     passed as inputs, and scripts/check-car-appearances.py still finds the
+#     dark renditions — so it is left as XcodeGen produces it.
+#   * the target settings the project needs but XcodeGen does not infer
+#     (`LD_RUNPATH_SEARCH_PATHS`, `ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS`)
+#     are stated explicitly in the target's `settings.base` below.
 #
 # Everything below is chosen to make an Xcode build produce the *same bundle*
 # `xtool dev build` produces, because the two are shipped from the same sources
@@ -54,6 +72,12 @@ options:
   bundleIdPrefix: com.awesomenull
   createIntermediateGroups: true
   groupSortPosition: top
+  # Generation is two steps in one: XcodeGen writes project.pbxproj, then the
+  # reconciler rewrites the Sources phase to what SwiftPM resolves (see the note
+  # at the top of this file).  XcodeGen runs this with the spec's directory as
+  # the working directory, so the relative path is what it expects.  The scripts
+  # in this repo are not marked executable, hence the explicit `python3`.
+  postGenCommand: python3 scripts/sync-pbxproj-sources.py
 
 packages:
   Minimuxer:
@@ -132,17 +156,26 @@ targets:
       - path: layout/Applications/GoldenNuggetMobile.app/Assets.xcassets
         buildPhase: resources
       # The Icon Composer document, listed *as well as* the catalog it lives in.
-      # actool treats `folder.iconcomposer.icon` as an input in its own right and
-      # does not descend into an `.xcassets` looking for one: passing only the
+      # actool treats an `.icon` document as an input in its own right and does
+      # not descend into an `.xcassets` looking for one: passing only the
       # catalog makes it fail with
       #   `None of the input catalogs contained a matching stickers icon set,
       #    app icon set, or icon stack named "AppIcon".`
       # which is exactly what the CI step in .github/workflows/assets-car.yml
       # avoids by passing `$CATALOG` **and** `$CATALOG/AppIcon.icon`.
-      # The file type has to come out as `folder.iconcomposer.icon`
-      # (AssetCatalogCompiler.xcspec lists it under InputFileTypes); check it by
-      # hand after any regeneration.
+      # `createIntermediateGroups: false` stops XcodeGen from nesting this in a
+      # second "Assets.xcassets" group with a random `TEMP_` ID (see the note at
+      # the top of this file).
       - path: layout/Applications/GoldenNuggetMobile.app/Assets.xcassets/AppIcon.icon
+        buildPhase: resources
+        createIntermediateGroups: false
+      # The in-app logo `NativeLogo` draws (home header, first run, About).  The
+      # Xcode build has to ship the same loose `Logo@1x/@2x` files xtool.yml
+      # copies, or `NativeLogo` finds no bundle image and falls back to its
+      # placeholder box on every screen that shows it.
+      - path: layout/Applications/GoldenNuggetMobile.app/Logo@2x.png
+        buildPhase: resources
+      - path: layout/Applications/GoldenNuggetMobile.app/Logo@1x.png
         buildPhase: resources
       # NO loose AppIcon*.png here, on purpose.  actool can emit them itself
       # (`standalone-icon-behavior`, set to `none` below) and a loose light-only
@@ -183,6 +216,16 @@ targets:
         OTHER_LDFLAGS:
           - "-framework"
           - "UIKit"
+        # The hand-written pbxproj carried these on the target; project.yml used
+        # to omit them, so a regeneration would have dropped them.  The rpath is
+        # what lets the embedded EMProxy dynamic slice load; the icon-catalog
+        # setting is what compiles the alternate `ScrappedIcon` alongside the
+        # primary stack.
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/Frameworks"
+        ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
+        PROVISIONING_PROFILE_SPECIFIER: ""
 
 schemes:
   GoldenNuggetMobile:
