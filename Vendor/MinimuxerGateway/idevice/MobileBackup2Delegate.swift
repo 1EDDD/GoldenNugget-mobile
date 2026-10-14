@@ -11,6 +11,31 @@
 import Foundation
 import IDevice
 
+// On iOS 27, BackupAgent2 checks the size of the WHOLE upload before the host's
+// per-file preserve filter is consulted. A selective protective backup can fit
+// in the app's available space even when the unfiltered estimate cannot.
+// Advertise a large virtual ceiling only while a preserve filter is active;
+// actual retained writes are guarded below and abort the backup before the
+// filesystem's safety reserve can be consumed.
+private let filteredBackupVirtualCapacity: UInt64 = 1 << 40
+private let filteredBackupMinimumReserve: UInt64 = 8 * 1024 * 1024 * 1024
+private let filteredBackupSpaceCheckInterval: UInt64 = 64 * 1024 * 1024
+
+private func hostAvailableCapacityBytes() -> UInt64? {
+    let home = URL(fileURLWithPath: NSHomeDirectory())
+    if let capacity = (try? home.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]))?
+        .volumeAvailableCapacityForImportantUsage,
+       capacity > 0 {
+        return UInt64(capacity)
+    }
+    if let attributes = try? FileManager.default.attributesOfFileSystem(forPath: NSHomeDirectory()),
+       let freeBytes = attributes[.systemFreeSize] as? NSNumber,
+       freeBytes.int64Value > 0 {
+        return freeBytes.uint64Value
+    }
+    return nil
+}
+
 public struct InstalledAppInfo: Sendable {
     public let bundleID: String
     public let path: String
@@ -104,6 +129,14 @@ public final class MobileBackup2BackupContext: @unchecked Sendable {
     private var delegateErrorSamples: [String] = []
     private var reportedDiskSpace = false
 
+    // The filtered backup's virtual preflight is safe only while we also enforce
+    // a real on-volume reserve for every retained payload stream. Check storage
+    // on the first chunk and then every 64 MiB, rather than stat'ing for every
+    // 32 KiB write.
+    private let filteredSpaceLock = NSLock()
+    private var filteredBytesSinceSpaceCheck: UInt64 = 0
+    private var hasCheckedFilteredSpace = false
+
     // ── Files the device actually took ───────────────────────────────────────
     //
     // A restore moves payloads host → device through `open_file_read`, and only
@@ -175,6 +208,40 @@ public final class MobileBackup2BackupContext: @unchecked Sendable {
         guard first else { return }
         reportEvent(String(format: "host free space reported to the device: %.2f GB",
                            Double(bytes) / 1_073_741_824.0))
+    }
+
+    /// Check actual free space before writing retained data from a filtered
+    /// backup. Rejected payloads are drained and do not pass through this write
+    /// callback. If the protected subset would consume the safety reserve, fail
+    /// the backup before the app proceeds to prune/restore/apply.
+    func permitsFilteredWrite(byteCount: Int) -> Bool {
+        guard shouldPreserve != nil else { return true }
+        let nextBytes = UInt64(max(0, byteCount))
+
+        filteredSpaceLock.lock()
+        let needsCheck = !hasCheckedFilteredSpace
+            || filteredBytesSinceSpaceCheck >= filteredBackupSpaceCheckInterval
+        if needsCheck {
+            hasCheckedFilteredSpace = true
+            filteredBytesSinceSpaceCheck = 0
+        }
+        filteredBytesSinceSpaceCheck += nextBytes
+        filteredSpaceLock.unlock()
+
+        guard needsCheck else { return true }
+        guard let available = hostAvailableCapacityBytes() else {
+            reportEvent("filtered backup stopped: host free space could not be measured safely")
+            return false
+        }
+        let (required, overflow) = filteredBackupMinimumReserve.addingReportingOverflow(nextBytes)
+        guard !overflow, available > required else {
+            reportEvent("filtered backup stopped before consuming the storage reserve: "
+                + "\(available / (1024 * 1024 * 1024)) GiB available, "
+                + "at least \(filteredBackupMinimumReserve / (1024 * 1024 * 1024)) GiB "
+                + "must remain free")
+            return false
+        }
+        return true
     }
 
     public init(
@@ -456,15 +523,25 @@ private func mb2_get_free_disk_space(
     _ ctx: UnsafeMutableRawPointer?
 ) -> UInt64 {
     guard let c = context(ctx) else { return 0 }
-    // The host-side backup root lives in the app's container, i.e. on the SAME
-    // volume as the device's own data — so the true answer is this volume's free
-    // space.  A hard-coded 1 TiB ("plenty of room") told the device there was
-    // room that may not exist; when the volume filled, the writes below failed
-    // and the payload silently went missing while the device kept streaming.
-    let url = URL(fileURLWithPath: NSHomeDirectory())
-    let capacity = (try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]))?
-        .volumeAvailableCapacityForImportantUsage
-    let bytes = capacity.flatMap { $0 > 0 ? UInt64($0) : nil } ?? (UInt64(1) << 40)
+    let actual = hostAvailableCapacityBytes()
+
+    // BackupAgent2's free-space preflight runs BEFORE the host's preserve filter,
+    // so it counts every source payload even though the filter below drains most
+    // of them without writing. If we report only physical free space on-device,
+    // iOS 27 can reject a selective backup before the first file reaches the
+    // filter (DLMessagePurgeDiskSpace, streamed=0). For filtered backups only,
+    // advertise a virtual ceiling and enforce the real 8 GiB reserve in
+    // mb2_write_chunk. Unfiltered transfers continue to report actual capacity.
+    let bytes: UInt64
+    if c.shouldPreserve != nil {
+        bytes = max(actual ?? 0, filteredBackupVirtualCapacity)
+        c.reportEvent("filtered backup preflight: actual free space "
+            + (actual.map { "\($0) bytes" } ?? "unavailable")
+            + "; reporting \(bytes) bytes because non-kept payloads are drained; "
+            + "retained writes stop before the 8 GiB reserve")
+    } else {
+        bytes = actual ?? filteredBackupVirtualCapacity
+    }
     c.reportDiskSpaceOnce(bytes)
     return bytes
 }
@@ -538,6 +615,11 @@ private func mb2_write_chunk(
     }
     let f = rawHandle.assumingMemoryBound(to: FILE.self)
     let want = Int(len)
+    if c.shouldPreserve != nil && !c.permitsFilteredWrite(byteCount: want) {
+        return fail(c, "write_chunk",
+                    "filtered backup stopped to preserve the minimum on-volume free-space reserve",
+                    code: -28)
+    }
     let wrote = fwrite(data, 1, want, f)
     if wrote != want {
         // A short write used to be dropped on the floor: the payload ended up
