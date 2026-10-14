@@ -94,9 +94,12 @@ enum HostManifests {
         // declares Status 2.4 / Manifest 9.1+20.0; iOS 27+ uses the sqlite
         // Manifest.db and 3.3 / 10.0+24.0.
         //
-        // `IsFullBackup` is the sparse marker and matters most here: this backup
-        // is built from nothing, so declaring it full would tell the device to
-        // reconcile against content that was never sent.
+        // `IsFullBackup` marks the backup operation as full. For a full
+        // device-side pull, however, Manifest.plist itself must start empty:
+        // it is the previous-backup manifest, not the restore manifest we later
+        // synthesize from the downloaded files. A populated restore manifest
+        // here can make iOS treat the host directory as existing backup state
+        // and finish without offering any payloads.
         let statusURL = deviceDir.appendingPathComponent("Status.plist")
         if !fm.fileExists(atPath: statusURL.path) || isFullBackup {
             let status: [String: Any] = [
@@ -113,51 +116,72 @@ enum HostManifests {
             }
         }
 
-        // Manifest.plist — the keybag below is not optional.  AppDomain payloads
-        // also have to be registered here: without a matching Applications entry,
-        // mobilebackup2 rejects the file row with MBErrorDomain/205
-        // "Unknown domain name in file record".
+        // Manifest.plist has two different jobs at two different times.
+        //
+        // During a full device-side backup, match the reference MobileBackup2
+        // flow: the file is a zero-byte placeholder. The device sees this as a
+        // fresh backup rather than a previously populated restore manifest.
+        // Do NOT put BackupKeyBag / SystemDomainsVersion here before the pull:
+        // that restore metadata belongs to the backup we prepare after the
+        // device has finished uploading its own Manifest.db and payloads.
+        //
+        // Before restore, BackupInjector calls ensure() again with
+        // isFullBackup == false. The empty placeholder triggers the block
+        // below to materialize the full restore Manifest.plist, including the
+        // keybag and any AppDomain registration. This separates the two phases
+        // instead of reusing restore metadata as the device's previous state.
         let manifestURL = deviceDir.appendingPathComponent("Manifest.plist")
-        if !fm.fileExists(atPath: manifestURL.path) || applications != nil {
-            var manifest: [String: Any]
-            if fm.fileExists(atPath: manifestURL.path),
-               let data = try? Data(contentsOf: manifestURL),
-               let existing = try? PropertyListSerialization.propertyList(
-                    from: data, options: [], format: nil) as? [String: Any] {
-                manifest = existing
-            } else {
-                manifest = [
-                    "DataProtection": true,
-                    "BackupKeyBag": Self.backupKeyBag,
-                    "Lockdown": [:],
-                    "SystemDomainsVersion": ios27 ? "24.0" : "20.0",
-                    "Version": ios27 ? "10.0" : "9.1",
-                    "Applications": [:],
-                ]
+        if isFullBackup {
+            try? fm.removeItem(at: manifestURL)
+            guard fm.createFile(atPath: manifestURL.path, contents: Data()) else {
+                throw NSError(domain: "HostManifests", code: 5,
+                              userInfo: [NSLocalizedDescriptionKey:
+                                "Could not create empty Manifest.plist for a full device backup"])
             }
-
-            if let applications {
-                // Restore registration is the compact shape proven by this
-                // project's earlier app-container PoC.  FactoryInfo uses the
-                // full installation_proxy record; Manifest.plist only needs the
-                // app identity/path fields that make AppDomain-<bundle id>
-                // resolvable by mobilebackup2.
-                var registered: [String: Any] = [:]
-                for (bundleID, entry) in applications {
-                    var app: [String: Any] = [
-                        "CFBundleIdentifier": entry["CFBundleIdentifier"] as? String ?? bundleID,
+        } else {
+            let existingBytes = try? Data(contentsOf: manifestURL)
+            let manifestIsEmpty = existingBytes?.isEmpty ?? true
+            if !fm.fileExists(atPath: manifestURL.path) || applications != nil || manifestIsEmpty {
+                var manifest: [String: Any]
+                if fm.fileExists(atPath: manifestURL.path),
+                   let data = existingBytes,
+                   !data.isEmpty,
+                   let existing = try? PropertyListSerialization.propertyList(
+                        from: data, options: [], format: nil) as? [String: Any] {
+                    manifest = existing
+                } else {
+                    manifest = [
+                        "DataProtection": true,
+                        "BackupKeyBag": Self.backupKeyBag,
+                        "Lockdown": [:],
+                        "SystemDomainsVersion": ios27 ? "24.0" : "20.0",
+                        "Version": ios27 ? "10.0" : "9.1",
+                        "Applications": [:],
                     ]
-                    for key in ["CFBundleVersion", "Path", "ContainerContentClass"] {
-                        if let value = entry[key] { app[key] = value }
-                    }
-                    registered[bundleID] = app
                 }
-                manifest["Applications"] = registered
-            }
 
-            try PropertyListSerialization.data(fromPropertyList: manifest,
-                                               format: .xml, options: 0)
-                .write(to: manifestURL)
+                if let applications {
+                    // Restore registration is the compact shape proven by this
+                    // project's earlier app-container PoC. FactoryInfo uses the
+                    // full installation_proxy record; Manifest.plist only needs
+                    // the app identity/path fields that make AppDomain resolvable.
+                    var registered: [String: Any] = [:]
+                    for (bundleID, entry) in applications {
+                        var app: [String: Any] = [
+                            "CFBundleIdentifier": entry["CFBundleIdentifier"] as? String ?? bundleID,
+                        ]
+                        for key in ["CFBundleVersion", "Path", "ContainerContentClass"] {
+                            if let value = entry[key] { app[key] = value }
+                        }
+                        registered[bundleID] = app
+                    }
+                    manifest["Applications"] = registered
+                }
+
+                try PropertyListSerialization.data(fromPropertyList: manifest,
+                                                   format: .xml, options: 0)
+                    .write(to: manifestURL)
+            }
         }
 
         // Info.plist — device identity, and the `Applications` map that decides
@@ -272,6 +296,8 @@ enum HostManifests {
     static func reset(backupRoot: URL, udid: String) throws {
         let deviceDir = AppPaths.deviceDir(backupRoot: backupRoot, udid: udid)
         try? FileManager.default.removeItem(at: deviceDir)
-        try ensure(deviceDir: deviceDir, udid: udid)
+        // reset() is called immediately before a fresh protective backup.
+        // Start it in the same empty-manifest state as any other full pull.
+        try ensure(deviceDir: deviceDir, udid: udid, isFullBackup: true)
     }
 }
